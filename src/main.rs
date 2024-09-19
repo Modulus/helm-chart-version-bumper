@@ -115,12 +115,20 @@ mod tests {
     }
 
     #[test]
-    fn test_increment_version_number_should_return_expected_number_small(){
-        let input = "0.0.5";
-        let expected = "0.0.6";
-        let result = increment_version(input);
+    fn test_increment_version_number_should_return_expected_number_map(){
+        let mut map = HashMap::new();
+        map.insert("0.0.1", "0.0.2");
+        map.insert("0.0.9", "0.1.0");
+        map.insert("8.0.0", "8.0.1");
+        map.insert("8.9.1", "8.9.2");
+        map.insert("0.0.9", "0.1.0");
+        map.insert("9.9.9", "1.0.0.0");
 
-        assert_eq!(expected, result.unwrap());
+        for (str_value, expected_number) in map {
+            let number = increment_version(str_value).unwrap();
+
+            assert_eq!(expected_number, number);
+        }
     }
 
     #[test]
