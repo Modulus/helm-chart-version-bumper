@@ -85,14 +85,25 @@ fn find_full_file_path() -> Result<PathBuf, io::Error> {
 
 #[cfg(test)]
 mod tests {
+    use std::collections::HashMap;
+
     // Note this useful idiom: importing names from outer (for mod tests) scope.
     use super::*;
 
     #[test]
-    fn test_convert_to_int(){
-        let number  = convert_to_int("0.0.1");
+    fn test_valid_input_convert_to_int(){
 
-        assert_eq!(1, number);
+        let mut map = HashMap::new();
+        map.insert("0.0.1", 1);
+        map.insert("0.0.2", 2);
+        map.insert("0.2.0", 20);
+        map.insert("10.0.0", 1000);
+
+        for (str_value, expected_number) in map {
+            let number = convert_to_int(str_value);
+
+            assert_eq!(expected_number, number);
+        }
     }
 
 }
