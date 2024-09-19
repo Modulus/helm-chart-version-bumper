@@ -87,7 +87,6 @@ fn find_full_file_path() -> Result<PathBuf, io::Error> {
 mod tests {
     use std::collections::HashMap;
 
-    // Note this useful idiom: importing names from outer (for mod tests) scope.
     use super::*;
 
     #[test]

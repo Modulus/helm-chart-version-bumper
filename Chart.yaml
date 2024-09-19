@@ -1,6 +1,6 @@
 apiVersion: v2
 name: some-deploy-rules
-description: A Helm chart for Kubernetes using odm images
+description: A Stoopid Helm chart for Kubernetes Something using images
 icon: https://www.dictionary.com/e/wp-content/uploads/2018/03/thisisfine-1.jpg
 keywords:
 - thisisfine
