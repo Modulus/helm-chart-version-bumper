@@ -17,9 +17,6 @@ fn main() -> io::Result<()> {
     if fs::exists("Chart.yaml")? {
         let file_path = find_full_file_path()?;
 
-        let new_version = "version: 1.2.3"; // Change this to your desired version
-    
-        // Read the file content
         let mut file = OpenOptions::new().read(true).open(file_path)?;
         let mut content = String::new();
         file.read_to_string(&mut content)?;
@@ -31,6 +28,9 @@ fn main() -> io::Result<()> {
                 println!("Version found: {:?}", version_str.to_string());
                 let version_str = version_str.trim();
 
+                let new_version = increment_version(version_str);
+                println!("New version string: {:?}", new_version.unwrap());
+
                 let version_int = convert_to_int(version_str);
         
                 println!("Extracted version as integer: {}", version_int);
@@ -39,16 +39,11 @@ fn main() -> io::Result<()> {
     
     }
     else {
-        println!("Chart.yaml not found!");
-        std::process::exit(1);
-    }
-    
-
-    let args: Vec<String> = env::args().collect();
-    if args.len() != 2 {
+        let args: Vec<String> = env::args().collect();
         eprintln!("Usage: {} in a directory containing a Chart.yaml file for a helm chart", args[0]);
         std::process::exit(1);
     }
+    
 
     // Create a regex to find the version string
     // let re = Regex::new(r"version: \d+\.\d+\.\d+").unwrap();
@@ -59,6 +54,21 @@ fn main() -> io::Result<()> {
     // file.write_all(updated_content.as_bytes())?;
 
     Ok(())
+}
+
+fn increment_version<'a>(version_str: &'a str) -> Option<String> {//-> Option<&'a str> {
+    let  new_version = convert_to_int(version_str)  + 1;
+    let bumped_raw = format!("{:0>3}", new_version);
+    let mut new_version = "".to_string();    
+    for (i, c) in bumped_raw.chars().enumerate() {
+        new_version.push(c);
+        if i < bumped_raw.len() - 1{
+            new_version.push_str(".");
+        }
+    }
+
+    return Some(new_version);
+
 }
 
 fn convert_to_int(version_str: &str) -> i32 {
@@ -94,6 +104,24 @@ mod tests {
     use std::collections::HashMap;
 
     use super::*;
+
+    #[test]
+    fn test_increment_version_number_should_return_expected_number(){
+        let input = "0.2.0";
+        let expected = "0.2.1";
+        let result = increment_version(input);
+
+        assert_eq!(expected, result.unwrap());
+    }
+
+    #[test]
+    fn test_increment_version_number_should_return_expected_number_small(){
+        let input = "0.0.5";
+        let expected = "0.0.6";
+        let result = increment_version(input);
+
+        assert_eq!(expected, result.unwrap());
+    }
 
     #[test]
     fn test_get_version_string_has_valid_input_returns_correct_string(){
