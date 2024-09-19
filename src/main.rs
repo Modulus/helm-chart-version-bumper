@@ -2,6 +2,7 @@ use std::env;
 use std::fs::OpenOptions;
 use std::io::{self, Read, Write};
 use std::fs;
+use std::path::PathBuf;
 
 const VERSION_PREFIX : &str = "version: ";
 
@@ -11,18 +12,38 @@ const VERSION_PREFIX : &str = "version: ";
 
 
 fn main() -> io::Result<()> {
-    // Get the command line arguments
-    let path = env::current_dir()?;
-    println!("Current dir is: {}", path.display());
-    
-    let res = fs::exists("Chart.yaml");
-    
+
     
     if fs::exists("Chart.yaml")? {
-    println!("Found chart!");
+        let file_path = find_full_file_path()?;
+
+        let new_version = "version: 1.2.3"; // Change this to your desired version
+    
+        // Read the file content
+        let mut file = OpenOptions::new().read(true).open(file_path)?;
+        let mut content = String::new();
+        file.read_to_string(&mut content)?;
+    
+        println!("{:?}", content);
+    
+        for line in content.lines() {
+            if line.starts_with(VERSION_PREFIX) {
+                println!("Current line: {}", line);
+                if let Some(version_str) = line.strip_prefix(VERSION_PREFIX) {
+                    println!("XXXXX{:?}", version_str.to_string());
+                    let version_int = convert_to_int(version_str);
+            
+                    println!("Extracted version as integer: {}", version_int);
+                } else {
+                    println!("No version found");
+                }
+            }
+        }
+    
     }
     else {
-    println!("Chart.yaml not found!");
+        println!("Chart.yaml not found!");
+        std::process::exit(1);
     }
     
 
@@ -31,37 +52,6 @@ fn main() -> io::Result<()> {
         eprintln!("Usage: {} <file_path>", args[0]);
         std::process::exit(1);
     }
-    let file_path = &args[1];
-
-    let new_version = "version: 1.2.3"; // Change this to your desired version
-
-    // Read the file content
-    let mut file = OpenOptions::new().read(true).open(file_path)?;
-    let mut content = String::new();
-    file.read_to_string(&mut content)?;
-
-    println!("{:?}", content);
-
-    for line in content.lines() {
-        if line.starts_with(VERSION_PREFIX) {
-            println!("Current line: {}", line);
-            if let Some(version_str) = line.strip_prefix(VERSION_PREFIX) {
-                println!("XXXXX{:?}", version_str.to_string());
-                let version_int: i32 = version_str
-                    .split('.')
-                    .collect::<String>()
-                    .parse()
-                    .expect("Failed to parse version number");
-        
-                println!("Extracted version as integer: {}", version_int);
-            } else {
-                println!("No version found");
-            }
-        }
-    }
-
-
-
 
     // Create a regex to find the version string
     // let re = Regex::new(r"version: \d+\.\d+\.\d+").unwrap();
@@ -72,4 +62,37 @@ fn main() -> io::Result<()> {
     // file.write_all(updated_content.as_bytes())?;
 
     Ok(())
+}
+
+fn convert_to_int(version_str: &str) -> i32 {
+    let version_int: i32 = version_str
+        .split('.')
+        .collect::<String>()
+        .parse()
+        .expect("Failed to parse version number");
+    version_int
+}
+
+fn find_full_file_path() -> Result<PathBuf, io::Error> {
+    println!("Found chart!");
+    let current_path = env::current_dir()?;
+    println!("Current dir is: {}", current_path.display());
+    let file_path = PathBuf::new().join(current_path).join("Chart.yaml");
+    println!("Opening file at: {:?}", file_path.display());
+    Ok(file_path)
+}
+
+
+#[cfg(test)]
+mod tests {
+    // Note this useful idiom: importing names from outer (for mod tests) scope.
+    use super::*;
+
+    #[test]
+    fn test_convert_to_int(){
+        let number  = convert_to_int("0.0.1");
+
+        assert_eq!(1, number);
+    }
+
 }
