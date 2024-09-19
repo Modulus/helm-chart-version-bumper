@@ -90,7 +90,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_valid_input_convert_to_int(){
+    fn test_valid_input_convert_to_int_should_result_in_correct_number(){
 
         let mut map = HashMap::new();
         map.insert("0.0.1", 1);
@@ -104,5 +104,24 @@ mod tests {
             assert_eq!(expected_number, number);
         }
     }
+
+    #[test]
+    #[should_panic]
+    fn test_invalid_input_empty_string_convert_to_int_shoud_fail(){
+        convert_to_int("");
+    }
+
+    #[test]
+    #[should_panic]
+    fn test_invalid_input_spaces_convert_to_int_should_fail(){
+        convert_to_int("   ");
+    }
+
+    #[test]
+    #[should_panic]
+    fn test_invalid_input_letters_convert_to_int_should_fail(){
+        convert_to_int("JKLASJDKLASJDL");
+    }
+
 
 }
