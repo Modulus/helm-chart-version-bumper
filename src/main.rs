@@ -27,16 +27,13 @@ fn main() -> io::Result<()> {
         println!("{:?}", content);
     
         for line in content.lines() {
-            if line.starts_with(VERSION_PREFIX) {
-                println!("Current line: {}", line);
-                if let Some(version_str) = line.strip_prefix(VERSION_PREFIX) {
-                    println!("XXXXX{:?}", version_str.to_string());
-                    let version_int = convert_to_int(version_str);
-            
-                    println!("Extracted version as integer: {}", version_int);
-                } else {
-                    println!("No version found");
-                }
+            if let Some(version_str) = get_version_string(line) {
+                println!("Version found: {:?}", version_str.to_string());
+                let version_str = version_str.trim();
+
+                let version_int = convert_to_int(version_str);
+        
+                println!("Extracted version as integer: {}", version_int);
             }
         }
     
@@ -73,6 +70,15 @@ fn convert_to_int(version_str: &str) -> i32 {
     version_int
 }
 
+fn get_version_string<'a>(line: &'a str) -> Option<&'a str> {
+    if line.starts_with(VERSION_PREFIX) {
+        return line.strip_prefix(VERSION_PREFIX);
+    }
+
+    return None
+
+}
+
 fn find_full_file_path() -> Result<PathBuf, io::Error> {
     println!("Found chart!");
     let current_path = env::current_dir()?;
@@ -88,6 +94,22 @@ mod tests {
     use std::collections::HashMap;
 
     use super::*;
+
+    #[test]
+    fn test_get_version_string_has_valid_input_returns_correct_string(){
+        let line = "version: 2.2.2";
+
+        let result = get_version_string(line);
+        assert_eq!("2.2.2", result.unwrap());
+    }
+
+    #[test]
+    fn test_get_version_invalid_input_returns_none(){
+        let line = "VERSION: 22.2.2.2";
+
+        let result = get_version_string(line);
+        assert!(result.is_none());
+    }
 
     #[test]
     fn test_valid_input_convert_to_int_should_result_in_correct_number(){
