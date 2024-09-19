@@ -49,7 +49,7 @@ fn main() -> io::Result<()> {
 
     let args: Vec<String> = env::args().collect();
     if args.len() != 2 {
-        eprintln!("Usage: {} <file_path>", args[0]);
+        eprintln!("Usage: {} in a directory containing a Chart.yaml file for a helm chart", args[0]);
         std::process::exit(1);
     }
 
