@@ -22,3 +22,8 @@ bump
 
 helm-chart-version-bumper
 ```
+
+## To check
+```
+git diff
+```
