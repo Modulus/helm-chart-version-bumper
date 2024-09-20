@@ -7,7 +7,10 @@ use std::path::PathBuf;
 const VERSION_PREFIX : &str = "version: ";
 
 
-
+enum Type {
+    HelmChartYamlFile,
+    ArgoAppYamlFile
+}
 
 
 
@@ -15,48 +18,8 @@ fn main() -> io::Result<()> {
 
     
     if fs::exists("Chart.yaml")? {
-        let file_path = find_full_file_path()?;
-
-        let mut file = OpenOptions::new().read(true).open(file_path)?;
-        let mut content = String::new();
-        file.read_to_string(&mut content)?;
-    
-        println!("===================================================================");
-
-        println!("Old file looked like this");
-        println!("{}",content.clone());
-        println!("===================================================================");
-
-
-        if let Some(new_content) = update_version(content){
-    
-            println!("New file will look like this");
-            println!("{}", new_content);
-            println!("===================================================================");
-        
-            print!("Do you want to apply this [y/n]?");
-            io::stdout().flush()?;
-            let mut input = String::new();
-            stdin().read_line(&mut input).expect("Error reading input");
-    
-            if input.contains("y") {
-                println!("Overwriting file!");
-                // Write the updated content back to the file
-                let mut file = OpenOptions::new().write(true).truncate(true).open(find_full_file_path()?)?;
-                file.write_all(new_content.as_bytes())?;
-            }
-            else {
-                println!("Skipping");
-            }
-        }
-        else {
-            eprint!("Failed to update anything!");
-        }
-
-  
-
-    
-    
+        println!("Handeling Chart.yaml");
+        handle_helm_chart_yaml()?;    
     }
     else {
         let args: Vec<String> = env::args().collect();
@@ -65,15 +28,44 @@ fn main() -> io::Result<()> {
     }
     
 
-    // Create a regex to find the version string
-    // let re = Regex::new(r"version: \d+\.\d+\.\d+").unwrap();
-    // let updated_content = re.replace(&content, new_version);
-
-    // Write the updated content back to the file
-    // let mut file = OpenOptions::new().write(true).truncate(true).open(file_path)?;
-    // file.write_all(updated_content.as_bytes())?;
-
     Ok(())
+}
+
+
+
+fn handle_helm_chart_yaml() -> Result<(), io::Error> {
+    let file_path = find_full_file_path()?;
+    let mut file = OpenOptions::new().read(true).open(file_path)?;
+    let mut content = String::new();
+    file.read_to_string(&mut content)?;
+    println!("===================================================================");
+    println!("Old file looked like this");
+    println!("{}",content.clone());
+    println!("===================================================================");
+    Ok(if let Some(new_content) = update_version(content){
+    
+        println!("New file will look like this");
+        println!("{}", new_content);
+        println!("===================================================================");
+
+        print!("Do you want to apply this [y/n]?");
+        io::stdout().flush()?;
+        let mut input = String::new();
+        stdin().read_line(&mut input).expect("Error reading input");
+    
+        if input.contains("y") {
+            println!("Overwriting file!");
+            // Write the updated content back to the file
+            let mut file = OpenOptions::new().write(true).truncate(true).open(find_full_file_path()?)?;
+            file.write_all(new_content.as_bytes())?;
+        }
+        else {
+            println!("Skipping");
+        }
+    }
+    else {
+        eprint!("Failed to update anything!");
+    })
 }
 
 fn update_version(content: String) -> Option<String> {

@@ -1,0 +1,28 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: demo-app
+  namespace: some-namespace
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+  labels:
+    odm.hmm.com/instance: demo-app
+  annotations:
+    gitops-trace.hmm.com/build-reason: IndividualCI
+spec:
+  destination:
+    namespace: some-namespace
+    server: https://kubernetes.default.svc
+  project: some-project
+  source:
+    chart: here
+    helm:
+      valuesObject: 
+        container:
+          image:
+            repository: ubuntu
+            version: 24.04
+    targetRevision: 0.3.3
+  syncPolicy:
+    automated:
+      prune: true
