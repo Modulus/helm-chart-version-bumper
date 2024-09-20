@@ -1,8 +1,13 @@
+use std::borrow::Borrow;
 use std::env;
-use std::fs::OpenOptions;
+use std::fs::{DirEntry, OpenOptions};
 use std::io::{self, Read, Write, stdin};
 use std::fs;
 use std::path::PathBuf;
+
+use log::{debug, error, log_enabled, info, Level};
+
+
 
 const VERSION_PREFIX : &str = "version: ";
 
@@ -15,12 +20,16 @@ enum Type {
 
 
 fn main() -> io::Result<()> {
+    env_logger::init();
 
     
     if fs::exists("Chart.yaml")? {
-        println!("Handeling Chart.yaml");
-        handle_helm_chart_yaml()?;    
+        info!("Handling Chart.yaml");
+        find_argo_yaml();
+        // handle_helm_chart_yaml()?;    
     }
+
+ 
     else {
         let args: Vec<String> = env::args().collect();
         eprintln!("Usage: {} in a directory containing a Chart.yaml file for a helm chart", args[0]);
@@ -32,6 +41,38 @@ fn main() -> io::Result<()> {
 }
 
 
+fn find_argo_yaml() -> Vec<DirEntry> {
+    let mut files: Vec<DirEntry> = Vec::new();
+
+    let paths = fs::read_dir("./").unwrap();
+
+    for path in paths {
+        debug!("Found files");
+        let file_name = &path.unwrap().path();
+        info!("Name: {}", file_name.display());
+
+        if file_name.clone().to_string_lossy().ends_with("yaml") && !file_name.clone().to_string_lossy().starts_with("Chart."){
+            debug!("Found yaml file that is not a Helm Chart file!");
+            debug!("Found yaml file {}", file_name.display());
+            let mut content = String::new();
+            let mut file = OpenOptions::new().read(true).open(file_name).unwrap();
+            file.read_to_string(&mut content).unwrap();
+
+            if is_argo_appcation(&content){
+                println!("Is argo application!");
+            }
+            
+        }
+    }
+  
+    return files;
+
+}
+
+
+fn is_argo_appcation(content: &String) -> bool {
+    return content.contains("apiVersion: argoproj.io") && content.contains("kind: Application")   
+}
 
 fn handle_helm_chart_yaml() -> Result<(), io::Error> {
     let file_path = find_full_file_path()?;
@@ -71,17 +112,17 @@ fn handle_helm_chart_yaml() -> Result<(), io::Error> {
 fn update_version(content: String) -> Option<String> {
     for line in content.lines() {
         if let Some(version_str) = get_version_string(line) {
-            println!("Version found: {:?}", version_str.to_string());
+            info!("Version found: {:?}", version_str.to_string());
             let version_str = version_str.trim();
 
             let new_version = increment_version(version_str);
-            println!("New version string: {:?}", new_version.unwrap());
+            info!("New version string: {:?}", new_version.unwrap());
 
             if let Some(new_version_str) = increment_version(version_str){
                 let mut new_version_full_str  = String::from(VERSION_PREFIX);
                 new_version_full_str.push_str(new_version_str.as_str());
 
-                println!("Replacing {:?} with {:?}", line, new_version_full_str);
+                debug!("Replacing {:?} with {:?}", line, new_version_full_str);
                 let new_content = content.replace(line, new_version_full_str.as_str());
                 return Some(new_content);
             }
@@ -136,7 +177,7 @@ fn find_full_file_path() -> Result<PathBuf, io::Error> {
 
 #[cfg(test)]
 mod tests {
-    use std::collections::HashMap;
+    use std::{borrow::Borrow, collections::HashMap};
 
     use super::*;
 
@@ -228,4 +269,45 @@ mod tests {
         assert_eq!(result, expected_output);
     }
 
+    #[test]
+    fn test_is_argo_app_file_is_argo_app_file_returns_true(){
+        let input : String = "apiVersion: argoproj.io/v1alpha1
+                            kind: Application
+                            metadata:
+                            name: demo-app
+                            namespace: some-namespace
+                            finalizers:
+                                - resources-finalizer.argocd.argoproj.io
+                            labels:
+                                odm.hmm.com/instance: demo-app
+                            annotations:
+                                gitops-trace.hmm.com/build-reason: IndividualCI
+                            spec:
+                            destination:
+                                namespace: some-namespace
+                                server: https://kubernetes.default.svc
+                            project: some-project
+                            source:
+                                chart: here
+                                helm:
+                                valuesObject: 
+                                    container:
+                                    image:
+                                        repository: ubuntu
+                                        version: 24.04
+                                targetRevision: 0.3.3
+                            syncPolicy:
+                                automated:
+                                prune: true
+                            ".into();
+        let result = is_argo_appcation(&input);
+        assert!(result);        
+
+    }
+
+    #[test]
+    fn is_argo_appcation_has_empty_string_returns_false(){
+        let result = is_argo_appcation("".to_string().borrow());
+        assert!(result == false);
+    }
 }
