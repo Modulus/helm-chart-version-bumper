@@ -12,3 +12,13 @@ helm-chart-version-bumper
 alias bump="helm-chart-version-bumper"
 
 NB! There must be a Chart.yaml in your current directory when running this
+
+# To run
+Stand in directory which has Chart.yaml
+```
+bump 
+
+//or
+
+helm-chart-version-bumper
+```
