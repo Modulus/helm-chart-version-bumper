@@ -34,7 +34,8 @@ fn main() -> io::Result<()> {
             println!("{}", new_content);
             println!("===================================================================");
         
-            println!("Do you want to apply this [y/n]?");
+            print!("Do you want to apply this [y/n]?");
+            io::stdout().flush()?;
             let mut input = String::new();
             stdin().read_line(&mut input).expect("Error reading input");
     
@@ -43,6 +44,9 @@ fn main() -> io::Result<()> {
                 // Write the updated content back to the file
                 let mut file = OpenOptions::new().write(true).truncate(true).open(find_full_file_path()?)?;
                 file.write_all(new_content.as_bytes())?;
+            }
+            else {
+                println!("Skipping");
             }
         }
         else {
