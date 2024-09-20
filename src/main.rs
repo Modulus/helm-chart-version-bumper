@@ -1,6 +1,6 @@
 use std::env;
 use std::fs::OpenOptions;
-use std::io::{self, Read, Write};
+use std::io::{self, Read, Write, stdin};
 use std::fs;
 use std::path::PathBuf;
 
@@ -21,21 +21,37 @@ fn main() -> io::Result<()> {
         let mut content = String::new();
         file.read_to_string(&mut content)?;
     
-        println!("{:?}", content);
+        println!("===================================================================");
+
+        println!("Old file looked like this");
+        println!("{}",content.clone());
+        println!("===================================================================");
+
+
+        if let Some(new_content) = update_version(content){
     
-        for line in content.lines() {
-            if let Some(version_str) = get_version_string(line) {
-                println!("Version found: {:?}", version_str.to_string());
-                let version_str = version_str.trim();
-
-                let new_version = increment_version(version_str);
-                println!("New version string: {:?}", new_version.unwrap());
-
-                let version_int = convert_to_int(version_str);
+            println!("New file will look like this");
+            println!("{}", new_content);
+            println!("===================================================================");
         
-                println!("Extracted version as integer: {}", version_int);
+            println!("Do you want to apply this [y/n]?");
+            let mut input = String::new();
+            stdin().read_line(&mut input).expect("Error reading input");
+    
+            if input.contains("y") {
+                println!("Overwriting file!");
+                // Write the updated content back to the file
+                let mut file = OpenOptions::new().write(true).truncate(true).open(find_full_file_path()?)?;
+                file.write_all(new_content.as_bytes())?;
             }
         }
+        else {
+            eprint!("Failed to update anything!");
+        }
+
+  
+
+    
     
     }
     else {
@@ -54,6 +70,29 @@ fn main() -> io::Result<()> {
     // file.write_all(updated_content.as_bytes())?;
 
     Ok(())
+}
+
+fn update_version(content: String) -> Option<String> {
+    for line in content.lines() {
+        if let Some(version_str) = get_version_string(line) {
+            println!("Version found: {:?}", version_str.to_string());
+            let version_str = version_str.trim();
+
+            let new_version = increment_version(version_str);
+            println!("New version string: {:?}", new_version.unwrap());
+
+            if let Some(new_version_str) = increment_version(version_str){
+                let mut new_version_full_str  = String::from(VERSION_PREFIX);
+                new_version_full_str.push_str(new_version_str.as_str());
+
+                println!("Replacing {:?} with {:?}", line, new_version_full_str);
+                let new_content = content.replace(line, new_version_full_str.as_str());
+                return Some(new_content);
+            }
+        }
+    }
+    return None;
+
 }
 
 fn increment_version<'a>(version_str: &'a str) -> Option<String> {//-> Option<&'a str> {
@@ -181,5 +220,16 @@ mod tests {
         convert_to_int("JKLASJDKLASJDL");
     }
 
+
+    #[test]
+    fn test_update_version_has_correct_output_based_on_file_input_as_string(){
+        let input = "apiVersion: v2\nname: some-deploy-rules\ndescription: A Stoopid Helm chart for Kubernetes Something using images\nicon: https://www.dictionary.com/e/wp-content/uploads/2018/03/thisisfine-1.jpg\nkeywords:\n- thisisfine\n- development\n- \n# A chart can be either an 'application' or a 'library' chart.\n#\n# Application charts are a collection of templates that can be packaged into versioned archives\n# to be deployed.\n#\n# Library charts provide useful utilities or functions for the chart developer. They're included as\n# a dependency of application charts to inject those utilities and functions into the rendering\n# pipeline. Library charts do not define any templates and therefore cannot be deployed.\ntype: application\n\n# This is the chart version. This version number should be incremented each time you make changes\n# to the chart and its templates, including the app version.\n# Versions are expected to follow Semantic Versioning (https://semver.org/)\nversion: 0.2.0\n\n# This is the version number of the application being deployed. This version number should be\n# incremented each time you make changes to the application. Versions are not expected to\n# follow Semantic Versioning. They should reflect the version the application is using.\n# It is recommended to use it with quotes.\nappVersion: \"1.16.0\" \ndependencies:\n- name: common\n  repository: oci://registry-1.docker.io/bitnamicharts\n  tags:\n  - bitnami-common\n  version: 2.x.x".to_string();
+
+        let expected_output = "apiVersion: v2\nname: some-deploy-rules\ndescription: A Stoopid Helm chart for Kubernetes Something using images\nicon: https://www.dictionary.com/e/wp-content/uploads/2018/03/thisisfine-1.jpg\nkeywords:\n- thisisfine\n- development\n- \n# A chart can be either an 'application' or a 'library' chart.\n#\n# Application charts are a collection of templates that can be packaged into versioned archives\n# to be deployed.\n#\n# Library charts provide useful utilities or functions for the chart developer. They're included as\n# a dependency of application charts to inject those utilities and functions into the rendering\n# pipeline. Library charts do not define any templates and therefore cannot be deployed.\ntype: application\n\n# This is the chart version. This version number should be incremented each time you make changes\n# to the chart and its templates, including the app version.\n# Versions are expected to follow Semantic Versioning (https://semver.org/)\nversion: 0.2.1\n\n# This is the version number of the application being deployed. This version number should be\n# incremented each time you make changes to the application. Versions are not expected to\n# follow Semantic Versioning. They should reflect the version the application is using.\n# It is recommended to use it with quotes.\nappVersion: \"1.16.0\" \ndependencies:\n- name: common\n  repository: oci://registry-1.docker.io/bitnamicharts\n  tags:\n  - bitnami-common\n  version: 2.x.x".to_string();
+
+        let result = update_version(input).unwrap();
+
+        assert_eq!(result, expected_output);
+    }
 
 }
