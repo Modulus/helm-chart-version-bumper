@@ -23,26 +23,31 @@ fn main() -> io::Result<()> {
     env_logger::init();
 
     
-    if fs::exists("Chart.yaml")? {
-        info!("Handling Chart.yaml");
-        find_argo_yaml();
-        // handle_helm_chart_yaml()?;    
-    }
+        let argo_path_bufs = find_yaml_files();
+        for path_buf in argo_path_bufs {
+            if is_helm_chart(&path_buf){
+                println!("Handle helm chart bump");
+                handle_helm_chart_yaml(&path_buf)?;    
+            }
+            // else if is_argo_appcation(&path_buf){
+            //     println!("Handle argo Application file");
+            // }
+        }
 
  
-    else {
-        let args: Vec<String> = env::args().collect();
-        eprintln!("Usage: {} in a directory containing a Chart.yaml file for a helm chart", args[0]);
-        std::process::exit(1);
-    }
+    // else {
+    //     let args: Vec<String> = env::args().collect();
+    //     eprintln!("Usage: {} in a directory containing a Chart.yaml file for a helm chart", args[0]);
+    //     std::process::exit(1);
+    // }
     
 
     Ok(())
 }
 
 
-fn find_argo_yaml() -> Vec<DirEntry> {
-    let mut files: Vec<DirEntry> = Vec::new();
+fn find_yaml_files() -> Vec<PathBuf> {
+    let mut files: Vec<PathBuf> = Vec::new();
 
     let paths = fs::read_dir("./").unwrap();
 
@@ -51,15 +56,16 @@ fn find_argo_yaml() -> Vec<DirEntry> {
         let file_name = &path.unwrap().path();
         info!("Name: {}", file_name.display());
 
-        if file_name.clone().to_string_lossy().ends_with("yaml") && !file_name.clone().to_string_lossy().starts_with("Chart."){
-            debug!("Found yaml file that is not a Helm Chart file!");
-            debug!("Found yaml file {}", file_name.display());
+        if file_name.clone().to_string_lossy().ends_with("yaml") || file_name.clone().to_string_lossy().ends_with("yml"){
+            println!("Found yaml file that is not a Helm Chart file!");
+            println!("Found yaml file {}", file_name.display());
             let mut content = String::new();
             let mut file = OpenOptions::new().read(true).open(file_name).unwrap();
             file.read_to_string(&mut content).unwrap();
 
-            if is_argo_appcation(&content){
-                println!("Is argo application!");
+            if is_argo_appcation(&content) || is_helm_chart(file_name){
+                println!("Found match");
+                files.push(file_name.clone());
             }
             
         }
@@ -69,13 +75,16 @@ fn find_argo_yaml() -> Vec<DirEntry> {
 
 }
 
+fn is_helm_chart(file_name: &PathBuf) -> bool {
+    file_name.ends_with("Chart.yaml")
+}
+
 
 fn is_argo_appcation(content: &String) -> bool {
     return content.contains("apiVersion: argoproj.io") && content.contains("kind: Application")   
 }
 
-fn handle_helm_chart_yaml() -> Result<(), io::Error> {
-    let file_path = find_full_file_path()?;
+fn handle_helm_chart_yaml(file_path: &PathBuf) -> Result<(), io::Error> {
     let mut file = OpenOptions::new().read(true).open(file_path)?;
     let mut content = String::new();
     file.read_to_string(&mut content)?;
@@ -306,8 +315,14 @@ mod tests {
     }
 
     #[test]
-    fn is_argo_appcation_has_empty_string_returns_false(){
+    fn test_is_argo_appcation_has_empty_string_returns_false(){
         let result = is_argo_appcation("".to_string().borrow());
         assert!(result == false);
+    }
+
+    #[test]
+    fn test_is_helm_chart_has_correct_file_name_returns_true() {
+        let path_buf = PathBuf::from("Chart.yaml");
+        assert!(is_helm_chart(&path_buf));
     }
 }
