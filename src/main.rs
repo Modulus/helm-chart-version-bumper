@@ -24,7 +24,7 @@ fn main() -> io::Result<()> {
     env_logger::init();
 
     
-        let argo_path_bufs = find_yaml_files();
+        let argo_path_bufs = find_valid_yaml_files();
         for path_buf in argo_path_bufs {
             if is_helm_chart(&path_buf){
                 println!("Handle helm chart bump");
@@ -47,7 +47,7 @@ fn main() -> io::Result<()> {
 }
 
 
-fn find_yaml_files() -> Vec<PathBuf> {
+pub fn find_valid_yaml_files() -> Vec<PathBuf> {
     let mut files: Vec<PathBuf> = Vec::new();
 
     let paths = fs::read_dir("./").unwrap();
