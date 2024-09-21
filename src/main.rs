@@ -82,9 +82,8 @@ fn is_argo_appcation(file_path: &PathBuf) -> bool {
             let mut content = String::new();
             match file.read_to_string(&mut content) {
                 Ok(_) => {
-                    if let Some(value) = file_contains_argo_app_fields(&content) {
-                        return value;
-                    } 
+                   return file_contains_argo_app_fields(&content) ;
+                   
                 },
                 Err(_) => {
                     eprintln!("Failed to read file: {}", &file_path.display());
@@ -98,20 +97,15 @@ fn is_argo_appcation(file_path: &PathBuf) -> bool {
         }
 
     }
-   
-    
-    return false;
 }
 
-fn file_contains_argo_app_fields(content: &String) -> Option<bool> {
+fn file_contains_argo_app_fields(content: &String) -> bool {
     if content.contains("apiVersion: argoproj.io") && content.contains("kind: Application") {
-        return Some(true);
+        return true;
     }
-    None
+    false
 }
-// fn is_argo_appcation(content: &String) -> bool {
-//     return content.contains("apiVersion: argoproj.io") && content.contains("kind: Application")   
-// }
+
 
 fn handle_helm_chart_yaml(file_path: &PathBuf) -> Result<(), io::Error> {
     let mut file = OpenOptions::new().read(true).open(file_path)?;
@@ -339,7 +333,7 @@ mod tests {
                                 prune: true
                             ".into();
         let result = file_contains_argo_app_fields(&input);
-        assert!(result.unwrap());        
+        assert!(result);        
 
     }
 
