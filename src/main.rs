@@ -1,5 +1,6 @@
 use std::borrow::Borrow;
 use std::env;
+use std::error::Error;
 use std::fs::{DirEntry, OpenOptions};
 use std::io::{self, Read, Write, stdin};
 use std::fs;
@@ -29,9 +30,9 @@ fn main() -> io::Result<()> {
                 println!("Handle helm chart bump");
                 handle_helm_chart_yaml(&path_buf)?;    
             }
-            // else if is_argo_appcation(&path_buf){
-            //     println!("Handle argo Application file");
-            // }
+            else if is_argo_appcation(&path_buf){
+                println!("Handle argo Application file");
+            }
         }
 
  
@@ -53,19 +54,14 @@ fn find_yaml_files() -> Vec<PathBuf> {
 
     for path in paths {
         debug!("Found files");
-        let file_name = &path.unwrap().path();
-        info!("Name: {}", file_name.display());
+        let path_buf = &path.unwrap().path();
+        info!("Name: {}", path_buf.display());
 
-        if file_name.clone().to_string_lossy().ends_with("yaml") || file_name.clone().to_string_lossy().ends_with("yml"){
-            println!("Found yaml file that is not a Helm Chart file!");
-            println!("Found yaml file {}", file_name.display());
-            let mut content = String::new();
-            let mut file = OpenOptions::new().read(true).open(file_name).unwrap();
-            file.read_to_string(&mut content).unwrap();
-
-            if is_argo_appcation(&content) || is_helm_chart(file_name){
+        if path_buf.clone().to_string_lossy().ends_with("yaml") || path_buf.clone().to_string_lossy().ends_with("yml"){
+    
+            if is_argo_appcation(&path_buf) || is_helm_chart(path_buf){
                 println!("Found match");
-                files.push(file_name.clone());
+                files.push(path_buf.clone());
             }
             
         }
@@ -80,9 +76,42 @@ fn is_helm_chart(file_name: &PathBuf) -> bool {
 }
 
 
-fn is_argo_appcation(content: &String) -> bool {
-    return content.contains("apiVersion: argoproj.io") && content.contains("kind: Application")   
+fn is_argo_appcation(file_path: &PathBuf) -> bool {
+    match OpenOptions::new().read(true).open(file_path){
+        Ok(mut file) => {
+            let mut content = String::new();
+            match file.read_to_string(&mut content) {
+                Ok(_) => {
+                    if let Some(value) = file_contains_argo_app_fields(&content) {
+                        return value;
+                    } 
+                },
+                Err(_) => {
+                    eprintln!("Failed to read file: {}", &file_path.display());
+                    return false;
+                }
+            };
+        }
+        Err(_) => {
+            eprint!("Failed to open file!");
+            return false;
+        }
+
+    }
+   
+    
+    return false;
 }
+
+fn file_contains_argo_app_fields(content: &String) -> Option<bool> {
+    if content.contains("apiVersion: argoproj.io") && content.contains("kind: Application") {
+        return Some(true);
+    }
+    None
+}
+// fn is_argo_appcation(content: &String) -> bool {
+//     return content.contains("apiVersion: argoproj.io") && content.contains("kind: Application")   
+// }
 
 fn handle_helm_chart_yaml(file_path: &PathBuf) -> Result<(), io::Error> {
     let mut file = OpenOptions::new().read(true).open(file_path)?;
@@ -279,7 +308,7 @@ mod tests {
     }
 
     #[test]
-    fn test_is_argo_app_file_is_argo_app_file_returns_true(){
+    fn test_file_contains_argo_app_fields_returns_true(){
         let input : String = "apiVersion: argoproj.io/v1alpha1
                             kind: Application
                             metadata:
@@ -309,14 +338,14 @@ mod tests {
                                 automated:
                                 prune: true
                             ".into();
-        let result = is_argo_appcation(&input);
-        assert!(result);        
+        let result = file_contains_argo_app_fields(&input);
+        assert!(result.unwrap());        
 
     }
 
     #[test]
     fn test_is_argo_appcation_has_empty_string_returns_false(){
-        let result = is_argo_appcation("".to_string().borrow());
+        let result = is_argo_appcation(PathBuf::from("").borrow());
         assert!(result == false);
     }
 
