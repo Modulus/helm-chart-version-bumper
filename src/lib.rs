@@ -157,9 +157,7 @@ pub fn find_valid_yaml_files() -> Vec<PathBuf> {
     let paths = fs::read_dir("./").unwrap();
 
     for path in paths {
-        println!("Found files");
         let path_buf = &path.unwrap().path();
-        println!("Name: {}", path_buf.display());
 
         if path_buf.clone().to_string_lossy().ends_with("yaml")
             || path_buf.clone().to_string_lossy().ends_with("yml")

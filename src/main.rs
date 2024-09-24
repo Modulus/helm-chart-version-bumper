@@ -10,6 +10,7 @@ fn main() -> io::Result<()> {
         if is_helm_chart(&path_buf) || is_argo_appcation(&path_buf) {
             println!("Version bump");
             handle_updated_of_helm_chart_version(&path_buf)?;
+            println!("Remember to run git diff to check your updated files")
         } else {
             println!("Cannot bump file: {}, not recognized", &path_buf.display())
         }
