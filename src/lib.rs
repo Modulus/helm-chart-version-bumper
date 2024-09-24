@@ -1,6 +1,5 @@
 use std::{fs, path::PathBuf};
 
-use std::env;
 use std::{
     fs::OpenOptions,
     io::{self, stdin, Read, Write},
@@ -101,7 +100,6 @@ pub fn update_version(content: String) -> Option<String> {
 }
 
 pub fn increment_version<'a>(version_str: &'a str) -> Option<String> {
-    //-> Option<&'a str> {
     let new_version = convert_to_int(version_str) + 1;
     let bumped_raw = format!("{:0>3}", new_version);
     let mut new_version = "".to_string();
@@ -115,7 +113,7 @@ pub fn increment_version<'a>(version_str: &'a str) -> Option<String> {
     return Some(new_version);
 }
 
-pub fn convert_to_int(version_str: &str) -> i32 {
+fn convert_to_int(version_str: &str) -> i32 {
     let version_int: i32 = version_str
         .split('.')
         .collect::<String>()
@@ -124,7 +122,7 @@ pub fn convert_to_int(version_str: &str) -> i32 {
     version_int
 }
 
-pub fn get_version_string<'a>(line: &'a str) -> Option<&'a str> {
+fn get_version_string<'a>(line: &'a str) -> Option<&'a str> {
     if line.starts_with(VERSION_PREFIX_HELM_CHART) {
         return line.strip_prefix(VERSION_PREFIX_HELM_CHART);
     } else if line.contains(VERSION_PREFIX_ARGO) {
@@ -142,14 +140,6 @@ fn get_version_prefix<'a>(line: &str) -> Option<&'a str> {
     return None;
 }
 
-pub fn find_full_file_path(file_name: &str) -> Result<PathBuf, io::Error> {
-    println!("Found chart!");
-    let current_path = env::current_dir()?;
-    println!("Current dir is: {}", current_path.display());
-    let file_path = PathBuf::new().join(current_path).join(file_name);
-    println!("Opening file at: {:?}", file_path.display());
-    Ok(file_path)
-}
 
 pub fn find_valid_yaml_files() -> Vec<PathBuf> {
     let mut files: Vec<PathBuf> = Vec::new();
