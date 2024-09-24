@@ -55,9 +55,7 @@ pub fn file_contains_argo_app_fields(content: &String) -> bool {
 
 
 pub fn handle_helm_chart_yaml(file_path: &PathBuf) -> Result<(), io::Error> {
-    let mut file = OpenOptions::new().read(true).open(file_path)?;
-    let mut content = String::new();
-    file.read_to_string(&mut content)?;
+    let content = read_file(file_path)?;
     println!("===================================================================");
     println!("Old file looked like this");
     println!("{}",content.clone());
@@ -73,7 +71,7 @@ pub fn handle_helm_chart_yaml(file_path: &PathBuf) -> Result<(), io::Error> {
         let mut input = String::new();
         stdin().read_line(&mut input).expect("Error reading input");
     
-        if input.contains("y") {
+        if input.contains("y") || input.contains("Y") {
             println!("Overwriting file!");
             // Write the updated content back to the file
             let mut file = OpenOptions::new().write(true).truncate(true).open(find_full_file_path("Chart.yaml")?)?;
@@ -86,6 +84,13 @@ pub fn handle_helm_chart_yaml(file_path: &PathBuf) -> Result<(), io::Error> {
     else {
         eprint!("Failed to update anything!");
     })
+}
+
+pub fn read_file(file_path: &PathBuf) -> Result<String, io::Error> {
+    let mut file = OpenOptions::new().read(true).open(file_path)?;
+    let mut content = String::new();
+    file.read_to_string(&mut content)?;
+    Ok(content)
 }
 
 pub fn update_version(content: String) -> Option<String> {
