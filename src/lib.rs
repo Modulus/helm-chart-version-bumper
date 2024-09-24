@@ -10,7 +10,7 @@ use log::{debug, info};
 
 
 const VERSION_PREFIX_HELM_CHART : &str = "version: ";
-const VERSION_PREFIX_ARGO : &str = "targetRevision: ";
+const VERSION_PREFIX_ARGO : &str = "    targetRevision: ";
 
 enum Type {
     HelmChartYamlFile,
@@ -96,14 +96,16 @@ pub fn read_file(file_path: &PathBuf) -> Result<String, io::Error> {
 pub fn update_version(content: String) -> Option<String> {
     for line in content.lines() {
         if let Some(version_str) = get_version_string(line) {
-            info!("Version found: {:?}", version_str.to_string());
+            println!("Version found: {:?}", version_str.to_string());
             let version_str = version_str.trim();
 
             let new_version = increment_version(version_str);
             info!("New version string: {:?}", new_version.unwrap());
 
             if let Some(new_version_str) = increment_version(version_str){
-                let mut new_version_full_str  = String::from(VERSION_PREFIX_HELM_CHART);
+                
+
+                let mut new_version_full_str  = String::from(get_version_prefix(line)?);
                 new_version_full_str.push_str(new_version_str.as_str());
 
                 debug!("Replacing {:?} with {:?}", line, new_version_full_str);
@@ -150,6 +152,16 @@ pub fn get_version_string<'a>(line: &'a str) -> Option<&'a str> {
     }
     return None
 
+}
+
+fn get_version_prefix<'a>(line: &str) -> Option<&'a str> {
+    if line.starts_with(VERSION_PREFIX_HELM_CHART) {
+        return Some(VERSION_PREFIX_HELM_CHART);
+    }
+    else if line.contains(VERSION_PREFIX_ARGO){
+        return Some(&VERSION_PREFIX_ARGO);
+    }
+    return None
 }
 
 pub fn find_full_file_path(file_name : &str) -> Result<PathBuf, io::Error> {
@@ -326,4 +338,23 @@ mod tests {
         let path_buf = PathBuf::from("Chart.yaml");
         assert!(is_helm_chart(&path_buf));
     }
+
+    #[test]
+    fn test_get_version_prefix_has_helm_chart_prefix_returns_correct_prefix(){
+        let line = "version: 500";
+        let prefix = get_version_prefix(line).unwrap();
+
+        assert_eq!(VERSION_PREFIX_HELM_CHART, prefix);
+    }
+
+
+    #[test]
+    fn test_get_version_prefix_has_aro_app_prefix_returns_correct_prefix(){
+        let line = "    targetRevision: 100000";
+        let prefix = get_version_prefix(line).unwrap();
+
+        assert_eq!(VERSION_PREFIX_ARGO, prefix);
+    }
+    
+
 }

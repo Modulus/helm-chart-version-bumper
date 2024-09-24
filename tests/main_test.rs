@@ -14,7 +14,7 @@ mod tests {
     }
 
     #[test]
-    fn test_update_version_in_memory_actualy_changes_version(){
+    fn test_update_version_in_memory_actualy_changes_version_for_helm_chart(){
 
         let origina_file_contens = read_file(&PathBuf::from("./Chart.yaml")).unwrap();
         assert!(origina_file_contens.contains("version: 0.2.0"));
@@ -24,6 +24,19 @@ mod tests {
 
         assert!(new_contens.contains("version: 0.2.0") == false);
         assert!(new_contens.contains("version: 0.2.1"));
+    }
+
+    #[test]
+    fn test_update_version_in_memory_actualy_changes_version_for_argo_app_yaml(){
+
+        let origina_file_contens = read_file(&PathBuf::from("./argo.yaml")).unwrap();
+        assert!(origina_file_contens.contains("    targetRevision: 0.3.3"));
+        // println!("{}", origina_file_contens);
+
+        let new_contens = update_version(origina_file_contens).unwrap();
+
+        assert!(new_contens.contains("    targetRevision: 0.3.3") == false);
+        assert!(new_contens.contains("    targetRevision: 0.3.4"));
     }
 
     // #[test]
