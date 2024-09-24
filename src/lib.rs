@@ -2,18 +2,15 @@ use std::{fs, path::PathBuf};
 
 
 
-use std::borrow::Borrow;
 use std::env;
-use std::error::Error;
-use std::fs::{DirEntry, OpenOptions};
-use std::io::{self, Read, Write, stdin};
+use std::{fs::OpenOptions, io::{self, stdin, Read, Write}};
 
-use log::{debug, error, log_enabled, info, Level};
+use log::{debug, info};
 
 
 
-const VERSION_PREFIX : &str = "version: ";
-
+const VERSION_PREFIX_HELM_CHART : &str = "version: ";
+const VERSION_PREFIX_ARGO : &str = "targetRevision: ";
 
 enum Type {
     HelmChartYamlFile,
@@ -79,7 +76,7 @@ pub fn handle_helm_chart_yaml(file_path: &PathBuf) -> Result<(), io::Error> {
         if input.contains("y") {
             println!("Overwriting file!");
             // Write the updated content back to the file
-            let mut file = OpenOptions::new().write(true).truncate(true).open(find_full_file_path()?)?;
+            let mut file = OpenOptions::new().write(true).truncate(true).open(find_full_file_path("Chart.yaml")?)?;
             file.write_all(new_content.as_bytes())?;
         }
         else {
@@ -101,7 +98,7 @@ pub fn update_version(content: String) -> Option<String> {
             info!("New version string: {:?}", new_version.unwrap());
 
             if let Some(new_version_str) = increment_version(version_str){
-                let mut new_version_full_str  = String::from(VERSION_PREFIX);
+                let mut new_version_full_str  = String::from(VERSION_PREFIX_HELM_CHART);
                 new_version_full_str.push_str(new_version_str.as_str());
 
                 debug!("Replacing {:?} with {:?}", line, new_version_full_str);
@@ -139,19 +136,22 @@ pub fn convert_to_int(version_str: &str) -> i32 {
 }
 
 pub fn get_version_string<'a>(line: &'a str) -> Option<&'a str> {
-    if line.starts_with(VERSION_PREFIX) {
-        return line.strip_prefix(VERSION_PREFIX);
-    }
 
+    if line.starts_with(VERSION_PREFIX_HELM_CHART) {
+        return line.strip_prefix(VERSION_PREFIX_HELM_CHART);
+    }
+    else if line.contains(VERSION_PREFIX_ARGO){
+        return line.strip_prefix(VERSION_PREFIX_ARGO)
+    }
     return None
 
 }
 
-pub fn find_full_file_path() -> Result<PathBuf, io::Error> {
+pub fn find_full_file_path(file_name : &str) -> Result<PathBuf, io::Error> {
     println!("Found chart!");
     let current_path = env::current_dir()?;
     println!("Current dir is: {}", current_path.display());
-    let file_path = PathBuf::new().join(current_path).join("Chart.yaml");
+    let file_path = PathBuf::new().join(current_path).join(file_name);
     println!("Opening file at: {:?}", file_path.display());
     Ok(file_path)
 }

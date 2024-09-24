@@ -1,25 +1,6 @@
-use std::borrow::Borrow;
-use std::env;
-use std::error::Error;
-use std::fs::{DirEntry, OpenOptions};
-use std::io::{self, Read, Write, stdin};
-use std::fs;
-use std::path::PathBuf;
+use std::io::{self};
 
 use helm_chart_version_bumper::{find_valid_yaml_files, handle_helm_chart_yaml, is_argo_appcation, is_helm_chart};
-use log::{debug, error, log_enabled, info, Level};
-
-
-
-const VERSION_PREFIX : &str = "version: ";
-
-
-enum Type {
-    HelmChartYamlFile,
-    ArgoAppYamlFile
-}
-
-
 
 fn main() -> io::Result<()> {
     env_logger::init();
