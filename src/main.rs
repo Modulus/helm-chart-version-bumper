@@ -5,8 +5,6 @@ use helm_chart_version_bumper::{
 };
 
 fn main() -> io::Result<()> {
-    env_logger::init();
-
     let argo_path_bufs = find_valid_yaml_files();
     for path_buf in argo_path_bufs {
         if is_helm_chart(&path_buf) || is_argo_appcation(&path_buf) {

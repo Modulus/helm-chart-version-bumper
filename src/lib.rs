@@ -6,7 +6,6 @@ use std::{
     io::{self, stdin, Read, Write},
 };
 
-use log::{debug, info};
 
 const VERSION_PREFIX_HELM_CHART: &str = "version: ";
 const VERSION_PREFIX_ARGO: &str = "    targetRevision: ";
@@ -45,15 +44,15 @@ pub fn file_contains_argo_app_fields(content: &String) -> bool {
 
 pub fn handle_updated_of_helm_chart_version(file_path: &PathBuf) -> Result<(), io::Error> {
     let content = read_file(file_path)?;
-    println!("===================================================================");
-    println!("Old file looked like this");
-    println!("{}", content.clone());
-    println!("===================================================================");
+    // println!("===================================================================");
+    // println!("Old file looked like this");
+    // println!("{}", content.clone());
+    // println!("===================================================================");
     Ok(if let Some(new_content) = update_version(content) {
-        println!("New file will look like this");
-        println!("{}", new_content);
-        println!("===================================================================");
-
+        // println!("New file will look like this");
+        // println!("{}", new_content);
+        // println!("===================================================================");
+        println!("Bump version of helm chart in file: {}", &file_path.display());
         print!("Do you want to apply this [y/n]?");
         io::stdout().flush()?;
         let mut input = String::new();
@@ -85,17 +84,14 @@ pub fn read_file(file_path: &PathBuf) -> Result<String, io::Error> {
 pub fn update_version(content: String) -> Option<String> {
     for line in content.lines() {
         if let Some(version_str) = get_version_string(line) {
-            println!("Version found: {:?}", version_str.to_string());
             let version_str = version_str.trim();
 
-            let new_version = increment_version(version_str);
-            info!("New version string: {:?}", new_version.unwrap());
 
             if let Some(new_version_str) = increment_version(version_str) {
                 let mut new_version_full_str = String::from(get_version_prefix(line)?);
                 new_version_full_str.push_str(new_version_str.as_str());
 
-                debug!("Replacing {:?} with {:?}", line, new_version_full_str);
+                println!("Will be replacing {:?} with {:?}", line, new_version_full_str);
                 let new_content = content.replace(line, new_version_full_str.as_str());
                 return Some(new_content);
             }
@@ -161,9 +157,9 @@ pub fn find_valid_yaml_files() -> Vec<PathBuf> {
     let paths = fs::read_dir("./").unwrap();
 
     for path in paths {
-        debug!("Found files");
+        println!("Found files");
         let path_buf = &path.unwrap().path();
-        info!("Name: {}", path_buf.display());
+        println!("Name: {}", path_buf.display());
 
         if path_buf.clone().to_string_lossy().ends_with("yaml")
             || path_buf.clone().to_string_lossy().ends_with("yml")
