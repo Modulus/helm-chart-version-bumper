@@ -153,7 +153,6 @@ pub fn find_valid_yaml_files() -> Vec<PathBuf> {
             || path_buf.clone().to_string_lossy().ends_with("yml")
         {
             if is_argo_appcation(&path_buf) || is_helm_chart(path_buf) {
-                println!("Found match");
                 files.push(path_buf.clone());
             }
         }
